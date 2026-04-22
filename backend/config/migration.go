@@ -14,8 +14,8 @@ func MigrateDB() {
 		&models.Comment{},
 	)
 	if err != nil {
-		fmt.Println("❌ Migrasi gagal:", err)
+		fmt.Println("Migrasi gagal:", err)
 		return
 	}
-	fmt.Println("✅ Migrasi database berhasil!")
+	fmt.Println("Migrasi database berhasil!")
 }
