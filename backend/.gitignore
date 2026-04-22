@@ -1,3 +1,6 @@
 .env
 *.exe
 tmp/
+
+uploads/*
+!uploads/.gitkeep
