@@ -8,18 +8,28 @@ import (
 	"github.com/nicholas301205/Unklab_Hub/tree/master/backend/utils"
 )
 
-// Middleware: cek JWT token valid
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
+		var tokenStr string
 
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		cookieToken, err := c.Cookie("token")
+		if err == nil && cookieToken != "" {
+			tokenStr = cookieToken
+		}
+
+		if tokenStr == "" {
+			authHeader := c.GetHeader("Authorization")
+			if strings.HasPrefix(authHeader, "Bearer ") {
+				tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
+			}
+		}
+
+		if tokenStr == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token tidak ditemukan"})
 			c.Abort()
 			return
 		}
 
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		claims, err := utils.ValidateToken(tokenStr)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid atau expired"})
@@ -27,14 +37,12 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Simpan data user ke context
 		c.Set("userID", claims.UserID)
 		c.Set("role", claims.Role)
 		c.Next()
 	}
 }
 
-// Middleware: cek role admin
 func AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, _ := c.Get("role")

@@ -19,9 +19,9 @@ func ConnectDB() {
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("❌ Gagal koneksi ke database:", err)
+		log.Fatal("Gagal koneksi ke database:", err)
 	}
 
-	fmt.Println("✅ Database terhubung!")
+	fmt.Println("Database terhubung!")
 	DB = db
 }
