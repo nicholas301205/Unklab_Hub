@@ -43,6 +43,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
+// AdminMiddleware (Identifikasi apakah user adalah admin, hanya untuk route yang butuh admin)
 func AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, _ := c.Get("role")

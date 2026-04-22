@@ -7,7 +7,6 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine) {
-	// Serve folder uploads (untuk akses gambar)
 	r.Static("/uploads", "./uploads")
 
 	api := r.Group("/api")

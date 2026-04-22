@@ -10,6 +10,7 @@ import (
 	"github.com/nicholas301205/Unklab_Hub/tree/master/backend/utils"
 )
 
+// Register (Membuat akun baru)
 func Register(c *gin.Context) {
 	var input struct {
 		Username string `json:"username" binding:"required"`
@@ -57,6 +58,7 @@ func Register(c *gin.Context) {
 	})
 }
 
+// Login (Membuat cookie token)
 func Login(c *gin.Context) {
 	var input struct {
 		Email    string `json:"email" binding:"required,email"`
@@ -110,6 +112,7 @@ func Login(c *gin.Context) {
 	})
 }
 
+// Logout (Menghapus cookie token)
 func Logout(c *gin.Context) {
 	isProduction := os.Getenv("APP_ENV") == "production"
 

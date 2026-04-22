@@ -1,0 +1,98 @@
+| No | Method | URL | Deskripsi |
+
+| 1 | POST | `http://localhost:8080/api/auth/register` | Register user baru |
+
+| 2 | POST | `http://localhost:8080/api/auth/login` | Login + dapat token |
+
+| 3 | POST | `http://localhost:8080/api/auth/logout` | Logout + hapus cookie |
+
+| 4 | GET | `http://localhost:8080/api/posts` | Get semua post |
+
+| 5 | GET | `http://localhost:8080/api/posts?q=keyword` | Search post |
+
+| 6 | GET | `http://localhost:8080/api/posts?sort=oldest` | Sort post terlama |
+
+| 7 | GET | `http://localhost:8080/api/posts?q=keyword&sort=oldest` | Search + Sort |
+
+| 8 | GET | `http://localhost:8080/api/posts/1` | Detail post by ID |
+
+| 9 | POST | `http://localhost:8080/api/posts` | Buat post baru |
+
+| 10 | PUT | `http://localhost:8080/api/posts/1` | Edit post |
+
+| 11 | DELETE | `http://localhost:8080/api/posts/1` | Hapus post |
+
+| 12 | GET | `http://localhost:8080/api/bookmarks` | Get semua bookmark |
+
+| 13 | POST | `http://localhost:8080/api/bookmarks` | Tambah bookmark |
+
+| 14 | DELETE | `http://localhost:8080/api/bookmarks/1` | Hapus bookmark |
+
+| 15 | GET | `http://localhost:8080/api/users/1` | Get profil user |
+
+| 16 | PUT | `http://localhost:8080/api/users/1` | Edit profil + avatar |
+
+KHUSUS ADMIN
+| 17 | GET | `http://localhost:8080/api/admin/users` | Get semua user |
+
+| 18 | DELETE | `http://localhost:8080/api/admin/users/1` | Hapus user |
+
+| 19 | GET | `http://localhost:8080/api/admin/posts` | Get semua post |
+
+| 20 | DELETE | `http://localhost:8080/api/admin/posts/1` | Hapus post manapun |
+
+| 21 | GET | `http://localhost:8080/uploads/namafile.jpg` | Akses gambar/avatar |
+
+Body Request for Setiap URL
+
+No.1 — Register
+raw
+
+{
+  "username": "agus",
+  "email": "agus@test.com",
+  "password": "agustinus"
+}
+
+
+No.2 — Login
+raw
+
+{
+  "email": "deki@test.com",
+  "password": "dekian"
+}
+
+
+No.9 — Buat Post 
+form-data
+
+key	: value
+title   : "Judul Diskusi"
+content : "Isi diskusi..."
+image   : (file gambar, opsional)
+
+
+No.10 — Edit Post
+raw 
+
+{
+  "title": "Judul Baru",
+  "content": "Isi baru..."
+}
+
+
+No.13 — Tambah Bookmark
+raw
+
+{
+  "post_id": 1
+}
+
+No.16 — Edit Profil 
+form-data
+
+key	:	value
+username : "nama baru"
+bio      : "bio baru"
+avatar   : (file gambar, opsional)
