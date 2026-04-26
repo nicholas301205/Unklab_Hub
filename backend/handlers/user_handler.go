@@ -11,7 +11,7 @@ import (
 	"github.com/nicholas301205/Unklab_Hub/tree/master/backend/models"
 )
 
-// GET /api/users/:id → get profil user
+// GetProfile (Mengambil profil user berdasarkan ID)
 func GetProfile(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User
@@ -24,12 +24,11 @@ func GetProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": user})
 }
 
-// PUT /api/users/:id → edit profil
+// UpdateProfile (Mengupdate profil user berdasarkan ID, yang bisa cuma owner yang update)
 func UpdateProfile(c *gin.Context) {
 	id := c.Param("id")
 	userID, _ := c.Get("userID")
 
-	// Hanya bisa edit profil sendiri
 	paramID, _ := strconv.Atoi(id)
 	if uint(paramID) != userID.(uint) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Tidak bisa edit profil orang lain"})
@@ -52,7 +51,6 @@ func UpdateProfile(c *gin.Context) {
 		user.Bio = bio
 	}
 
-	// Handle upload avatar
 	file, err := c.FormFile("avatar")
 	if err == nil {
 		filename := strconv.FormatInt(time.Now().Unix(), 10) + filepath.Ext(file.Filename)
@@ -68,14 +66,14 @@ func UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Profil berhasil diupdate", "data": user})
 }
 
-// GET /api/admin/users → list semua user (admin only)
+// GetAllUsers (Mengambil semua user, hanya untuk admin)
 func GetAllUsers(c *gin.Context) {
 	var users []models.User
 	config.DB.Find(&users)
 	c.JSON(http.StatusOK, gin.H{"data": users})
 }
 
-// DELETE /api/admin/users/:id → hapus user (admin only)
+// hapus user (admin only)
 func DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User

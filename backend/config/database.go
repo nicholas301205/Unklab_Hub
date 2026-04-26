@@ -14,7 +14,7 @@ var DB *gorm.DB
 func ConnectDB() {
 	dsn := os.Getenv("DSN")
 	if dsn == "" {
-		log.Fatal("❌ Environment variable 'DSN' is not set")
+		log.Fatal("Environment variable 'DSN' is not set")
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})

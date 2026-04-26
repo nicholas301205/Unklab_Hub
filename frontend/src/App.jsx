@@ -1,9 +1,13 @@
+import Login from './pages/Login'; // Import file yang baru kamu buat
+import Dashboard from './pages/Dashboard';
+
 function App() {
   return (
-    <div className="bg-blue-500 text-white p-4 rounded-lg">
-      Tailwind berhasil! 🎉
+    <div>
+      {/* Menampilkan halaman login */}
+      <Dashboard />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
