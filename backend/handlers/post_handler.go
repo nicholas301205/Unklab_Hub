@@ -11,7 +11,7 @@ import (
 	"github.com/nicholas301205/Unklab_Hub/tree/master/backend/models"
 )
 
-// GET /api/posts → semua post + sort + search
+// GetAllPosts (Mengambil semua post dengan opsi search dan sort)
 func GetAllPosts(c *gin.Context) {
 	var posts []models.Post
 
@@ -28,7 +28,7 @@ func GetAllPosts(c *gin.Context) {
 	case "oldest":
 		query = query.Order("created_at ASC")
 	default:
-		query = query.Order("created_at DESC") // default: terbaru
+		query = query.Order("created_at DESC")
 	}
 
 	if err := query.Find(&posts).Error; err != nil {
@@ -39,7 +39,7 @@ func GetAllPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": posts})
 }
 
-// GET /api/posts/:id → detail post
+// GetPostByID (Mengambil post berdasarkan ID)
 func GetPostByID(c *gin.Context) {
 	id := c.Param("id")
 	var post models.Post
@@ -52,7 +52,7 @@ func GetPostByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": post})
 }
 
-// POST /api/posts → buat post baru
+// CreatePost (Membuat post baru dengan upload gambar(Optional))
 func CreatePost(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -70,7 +70,6 @@ func CreatePost(c *gin.Context) {
 		Content: content,
 	}
 
-	// Handle upload gambar (opsional)
 	file, err := c.FormFile("image")
 	if err == nil {
 		filename := strconv.FormatInt(time.Now().Unix(), 10) + filepath.Ext(file.Filename)
@@ -91,7 +90,7 @@ func CreatePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Post berhasil dibuat", "data": post})
 }
 
-// PUT /api/posts/:id → edit post
+// UpdatePost (Mengupdate post berdasarkan ID, yang bisa cuma owner atau admin yang update)
 func UpdatePost(c *gin.Context) {
 	id := c.Param("id")
 	userID, _ := c.Get("userID")
@@ -103,7 +102,7 @@ func UpdatePost(c *gin.Context) {
 		return
 	}
 
-	// Hanya owner atau admin yang boleh edit
+	// Cuma owner atau admin yang boleh edit
 	if post.UserID != userID.(uint) && role != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Tidak punya akses"})
 		return
@@ -127,7 +126,7 @@ func UpdatePost(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Post berhasil diupdate", "data": post})
 }
 
-// DELETE /api/posts/:id → hapus post
+// DeletePost (Menghapus post berdasarkan ID, yang bisa cuma owner atau admin yang hapus)
 func DeletePost(c *gin.Context) {
 	id := c.Param("id")
 	userID, _ := c.Get("userID")
@@ -139,7 +138,7 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	// Hanya owner atau admin yang boleh hapus
+	// Cuma owner atau admin yang boleh hapus
 	if post.UserID != userID.(uint) && role != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Tidak punya akses"})
 		return

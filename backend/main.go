@@ -19,6 +19,7 @@ func main() {
 
 	r := gin.Default()
 
+	// CORS configuration
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -26,7 +27,6 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Setup semua routes
 	routes.SetupRoutes(r)
 
 	port := os.Getenv("PORT")
@@ -34,6 +34,6 @@ func main() {
 		port = "8081"
 	}
 
-	fmt.Println("🚀 Server berjalan di port", port)
+	fmt.Println("Server berjalan di port", port)
 	r.Run(":" + port)
 }

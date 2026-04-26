@@ -8,7 +8,7 @@ import (
 	"github.com/nicholas301205/Unklab_Hub/tree/master/backend/models"
 )
 
-// GET /api/bookmarks → ambil semua bookmark milik user
+// GetBookmarks (Mengambil semua bookmark berdasarkan userID)
 func GetBookmarks(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	var bookmarks []models.Bookmark
@@ -23,7 +23,7 @@ func GetBookmarks(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": bookmarks})
 }
 
-// POST /api/bookmarks → tambah bookmark
+// AddBookmark (Menambah bookmark berdasarkan userID dan postID)
 func AddBookmark(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
@@ -57,7 +57,7 @@ func AddBookmark(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Berhasil bookmark post"})
 }
 
-// DELETE /api/bookmarks/:postId → hapus bookmark
+// DeleteBookmark (Menghapus bookmark berdasarkan userID dan postID)
 func DeleteBookmark(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	postID := c.Param("postId")
