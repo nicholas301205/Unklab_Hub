@@ -8,12 +8,12 @@ import { PostCard } from './components/PostCard';
 import { SettingsPage } from './components/SettingsPage';
 
 export default function App() {
+  // --- STATES ---
   const [currentView, setCurrentView] = useState('beranda');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('Semua');
-  
-  // 1. TAMBAH STATE UNTUK PENCARIAN
   const [searchQuery, setSearchQuery] = useState('');
+  const [newPostImage, setNewPostImage] = useState(null);
 
   const currentUser = {
     name: "John Doe",
@@ -25,14 +25,25 @@ export default function App() {
       id: 1,
       user: currentUser,
       title: "Selamat datang di UNKLAB Hub!",
-      content: "Ini adalah tampilan beranda utama. Silakan buat diskusi baru.",
+      content: "Ini adalah tampilan beranda utama. Silakan buat diskusi baru atau unggah gambar.",
       category: "Akademik", 
       timestamp: "Baru saja",
       likes: 0,
       commentsData: [],
-      isBookmarked: false
+      isBookmarked: false,
+      image: null
     }
   ]);
+
+  // --- HANDLERS (Fungsi-fungsi) ---
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setNewPostImage(imageUrl);
+    }
+  };
 
   const handleAddNewPost = (title, content, category) => {
     const newPost = {
@@ -44,11 +55,13 @@ export default function App() {
       timestamp: "Baru saja",
       likes: 0,
       commentsData: [],
-      isBookmarked: false
+      isBookmarked: false,
+      image: newPostImage
     };
 
     setPosts([newPost, ...posts]);
     setIsModalOpen(false); 
+    setNewPostImage(null);
   };
 
   const handleToggleBookmark = (postId) => {
@@ -82,10 +95,9 @@ export default function App() {
     }
   };
 
-  // 2. LOGIKA FILTER GABUNGAN (Kategori, Bookmark, dan PENCARIAN)
+  // --- LOGIKA FILTERING ---
   let displayedPosts = posts;
 
-  // Filter Kategori & Bookmark
   if (currentView === 'bookmark') {
     displayedPosts = posts.filter(post => post.isBookmarked);
   } else if (currentView === 'beranda') {
@@ -94,7 +106,6 @@ export default function App() {
     }
   }
 
-  // Filter Pencarian (Berjalan jika searchQuery tidak kosong)
   if (searchQuery.trim() !== '') {
     const query = searchQuery.toLowerCase();
     displayedPosts = displayedPosts.filter(post => 
@@ -105,50 +116,59 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-      {/* JIKA currentView ADALAH 'admin', TAMPILKAN ADMIN DASHBOARD FULL SCREEN */}
+      
+      {/* 1. ADMIN DASHBOARD (Hanya muncul jika state 'admin') */}
       {currentView === 'admin' && (
-        <AdminDashboard onExit={() => setCurrentView('beranda')} />
-
+        <AdminDashboard 
+          posts={posts} 
+          onDeletePost={handleDeletePost} 
+          onExit={() => setCurrentView('beranda')} 
+        />
       )}
+
+      {/* 2. NAVBAR */}
       <Navbar 
         userName={currentUser.name} 
         onSearch={(query) => setSearchQuery(query)}
         onGoToProfile={() => setCurrentView('profile')} 
         onGoToSettings={() => setCurrentView('settings')}
-        onLogout={() => alert('Fitur Logout akan segera datang!')}
         onGoToAdmin={() => setCurrentView('admin')} 
-        onLogout={() => alert('Fitur Logout akan segera datang!')} 
-        
+        onLogout={() => alert('Logout Berhasil')} 
       />
 
-      {/* KODE UNTUK MEMUNCULKAN ADMIN DASHBOARD */}
-      {currentView === 'admin' && (
-        <AdminDashboard onExit={() => setCurrentView('beranda')} />
-      )}
-      
+      {/* 3. LAYOUT UTAMA */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-8">
+        
+        {/* SIDEBAR KIRI */}
         <div className="hidden md:block w-64 flex-shrink-0">
           <Sidebar 
             activeMenu={currentView}
             onMenuClick={(menuId) => {
               setCurrentView(menuId);
               if (menuId !== 'beranda') setSelectedCategory('Semua'); 
-              setSearchQuery(''); // Reset pencarian jika pindah menu
+              setSearchQuery('');
             }}
             onCreatePost={() => setIsModalOpen(true)}
             activeCategory={selectedCategory}
             onSelectCategory={(cat) => {
               setSelectedCategory(cat);
               setCurrentView('beranda'); 
-              setSearchQuery(''); // Reset pencarian jika ganti kategori
+              setSearchQuery('');
             }}
           />
         </div>
 
+        {/* AREA KONTEN TENGAH */}
         <main className="flex-1">
           {currentView === 'profile' ? (
-            <ProfilePage onClose={() => setCurrentView('beranda')} />
+            <ProfilePage 
+              currentUser={currentUser}
+              posts={posts}
+              onClose={() => setCurrentView('beranda')} 
+              onBookmark={handleToggleBookmark}
+              onAddComment={handleAddComment}
+              onDeletePost={handleDeletePost}
+            />
           ) : currentView === 'settings' ? (
             <SettingsPage onBack={() => setCurrentView('beranda')} />
           ) : (
@@ -156,7 +176,7 @@ export default function App() {
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">
                   {searchQuery.trim() !== '' 
-                    ? `Hasil pencarian: "${searchQuery}"` // Ganti judul jika sedang mencari
+                    ? `Hasil pencarian: "${searchQuery}"`
                     : currentView === 'bookmark' 
                       ? 'Bookmark Tersimpan' 
                       : (selectedCategory === 'Semua' ? 'Beranda Diskusi' : `Diskusi: #${selectedCategory}`)
@@ -168,24 +188,18 @@ export default function App() {
                 <PostCard 
                   key={postItem.id}
                   post={postItem}
-                  // 1. TAMBAHKAN BARIS INI:
                   currentUser={currentUser} 
-                  
                   onBookmark={handleToggleBookmark} 
                   onAddComment={handleAddComment}
                   onDeletePost={handleDeletePost}
-                  onPostClick={(id) => console.log('Buka post id:', id)}
+                  onPostClick={(id) => console.log('Buka post:', id)}
                 />
               ))}
 
               {displayedPosts.length === 0 && (
                 <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
                   <p className="text-gray-500">
-                    {searchQuery.trim() !== '' 
-                      ? `Tidak ada hasil yang cocok dengan "${searchQuery}".`
-                      : currentView === 'bookmark'
-                        ? 'Belum ada diskusi yang disimpan ke Bookmark.'
-                        : 'Belum ada diskusi untuk kategori ini.'}
+                    Tidak ada diskusi yang ditemukan.
                   </p>
                 </div>
               )}
@@ -194,10 +208,17 @@ export default function App() {
         </main>
       </div>
 
+      {/* 4. MODAL BUAT DISKUSI */}
       <CreatePostModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setNewPostImage(null);
+        }}
         onSubmit={handleAddNewPost}
+        newPostImage={newPostImage}
+        onImageUpload={handleImageUpload}
+        onRemoveImage={() => setNewPostImage(null)}
       />
     </div>
   );

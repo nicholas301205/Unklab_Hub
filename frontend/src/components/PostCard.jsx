@@ -86,6 +86,17 @@ export function PostCard({ post, currentUser, onBookmark, onPostClick, onAddComm
       <div className="cursor-pointer" onClick={() => onPostClick(post.id)}>
         <h2 className="text-xl font-bold text-gray-900 mb-2">{post.title}</h2>
         <p className="text-gray-600 mb-4">{post.content}</p>
+        
+        {post.image && (
+          <div className="mb-4 rounded-xl overflow-hidden border border-gray-100 bg-gray-50">
+            <img 
+              src={post.image} 
+              alt="Post attachment" 
+              className="w-full max-h-[400px] object-contain"
+            />
+          </div>
+        )}
+
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-50">
