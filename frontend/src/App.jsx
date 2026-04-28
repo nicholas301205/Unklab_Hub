@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { ProfilePage } from './components/ProfilePage';
+import { SettingsPage } from './components/SettingsPage'; 
 import { PostCard } from './components/PostCard';
 import { CreatePostModal } from './components/CreatePostModal'; 
+// 🔥 1. IMPORT ADMIN DASHBOARD DI SINI 🔥
+import { AdminDashboard } from './components/AdminDashboard'; 
 import Login from './pages/Login';
 import Register from './pages/Register';
 import { api, getBookmarks, addBookmark, removeBookmark, addComment, deletePost } from './api/api';
@@ -38,6 +41,8 @@ export default function App() {
 
   const [posts, setPosts] = useState([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Semua'); 
+  const [searchQuery, setSearchQuery] = useState('');
 
   // --- 2. FETCH DATA POSTINGAN & BOOKMARK ---
   useEffect(() => {
@@ -62,10 +67,7 @@ export default function App() {
           category: p.category || "Akademik",
           timestamp: new Date(p.created_at).toLocaleDateString('id-ID'),
           isBookmarked: bookmarkedPostIds.includes(p.id), 
-          
-          // SEKARANG INI BAKAL TERISI KARENA BACKEND UDAH PRELOAD
           comments: p.comments || [], 
-          
           image: p.image_url ? `http://localhost:8081${p.image_url}` : null 
         }));
         setPosts(mapped);
@@ -139,8 +141,6 @@ export default function App() {
   const handleAddComment = async (postId, text) => {
     try {
       const res = await addComment(postId, text);
-      
-      // Deteksi otomatis apakah data di dalem field "data" atau langsung di body
       const newComment = res.data?.data || res.data; 
       
       setPosts(prevPosts => prevPosts.map(p => {
@@ -165,19 +165,51 @@ export default function App() {
     }
   };
 
-  // --- 5. RENDER LOGIC ---
+  // --- 5. RENDER LOGIC (FILTERING) ---
+  
+  let displayedPosts = posts;
+
+  if (currentView === 'bookmark') {
+    displayedPosts = posts.filter(p => p.isBookmarked);
+  }
+
+  if (currentView === 'beranda' && activeCategory !== 'Semua') {
+    displayedPosts = posts.filter(p => p.category === activeCategory);
+  }
+
+  if (searchQuery.trim() !== '') {
+    const lowerQuery = searchQuery.toLowerCase();
+    displayedPosts = displayedPosts.filter(p => 
+      p.title.toLowerCase().includes(lowerQuery) || 
+      p.content.toLowerCase().includes(lowerQuery) ||
+      p.user.name.toLowerCase().includes(lowerQuery)
+    );
+  }
+
+  // --- 6. RENDER HALAMAN ---
+
+  // Jika belum login, tampilkan Login/Register
   if (!isLoggedIn) {
     return currentView === 'register' 
       ? <Register onSwitch={() => setCurrentView('login')} /> 
       : <Login onLoginSuccess={handleLoginSuccess} onSwitch={() => setCurrentView('register')} />;
   }
 
+  // 🔥 2. CEK ROLE ADMIN DI SINI 🔥
+  // Jika sudah login dan role-nya adalah 'admin', arahkan ke AdminDashboard
+  if (currentUser?.role === 'admin') {
+    return <AdminDashboard onExit={handleLogout} />;
+  }
+
+  // Jika role-nya 'user' (atau lainnya), tampilkan halaman Dashboard User biasa
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <Navbar 
         userName={currentUser?.username} 
         userAvatar={currentUser?.avatar} 
+        onSearch={setSearchQuery} 
         onGoToProfile={() => setCurrentView('profile')} 
+        onGoToSettings={() => setCurrentView('pengaturan')} 
         onLogout={handleLogout} 
       />
       
@@ -185,8 +217,16 @@ export default function App() {
         <div className="hidden md:block w-64 flex-shrink-0">
           <Sidebar 
             activeMenu={currentView} 
-            onMenuClick={(v) => setCurrentView(v)} 
-            onCreatePost={() => setIsCreateModalOpen(true)} 
+            onMenuClick={(v) => {
+              setCurrentView(v);
+              setSearchQuery(''); 
+            }} 
+            onCreatePost={() => setIsCreateModalOpen(true)}
+            activeCategory={activeCategory} 
+            onSelectCategory={(cat) => {
+              setActiveCategory(cat);
+              setSearchQuery(''); 
+            }} 
           />
         </div>
         
@@ -201,11 +241,23 @@ export default function App() {
               onAddComment={handleAddComment}
               onDeletePost={handleDeletePost}
             />
+          ) : currentView === 'pengaturan' ? (
+            <SettingsPage onBack={() => setCurrentView('beranda')} />
           ) : (
             <div className="space-y-4">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">Beranda Diskusi</h1>
-              {posts.length > 0 ? (
-                posts.map(p => (
+              <h1 className="text-2xl font-bold text-gray-900 mb-6">
+                {searchQuery !== ''
+                  ? `Hasil pencarian: "${searchQuery}"` 
+                  : currentView === 'bookmark' 
+                    ? 'Diskusi Tersimpan' 
+                    : activeCategory === 'Semua' 
+                      ? 'Beranda Diskusi' 
+                      : `Diskusi: ${activeCategory}`
+                }
+              </h1>
+              
+              {displayedPosts.length > 0 ? (
+                displayedPosts.map(p => (
                   <PostCard 
                     key={p.id} 
                     post={p} 
@@ -217,7 +269,11 @@ export default function App() {
                 ))
               ) : (
                 <div className="p-10 text-center bg-white rounded-xl border border-gray-100 text-gray-400">
-                  Belum ada diskusi tersedia.
+                  {searchQuery !== ''
+                    ? 'Tidak ada diskusi yang cocok dengan pencarian kamu.'
+                    : currentView === 'bookmark' 
+                      ? 'Belum ada diskusi yang kamu simpan.' 
+                      : 'Belum ada diskusi di kategori ini.'}
                 </div>
               )}
             </div>

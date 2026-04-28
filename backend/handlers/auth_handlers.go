@@ -60,9 +60,11 @@ func Register(c *gin.Context) {
 
 // Login (Membuat cookie token)
 func Login(c *gin.Context) {
+	// 1. TAMBAHAN: Kita tambahkan Role di struct ini agar backend menangkap role dari dropdown frontend
 	var input struct {
 		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required"`
+		Role     string `json:"role" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -78,6 +80,12 @@ func Login(c *gin.Context) {
 
 	if !utils.CheckPassword(input.Password, user.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau password salah"})
+		return
+	}
+
+	// 2. TAMBAHAN: Cek kecocokan role yang dipilih di web dengan role asli di database
+	if input.Role != user.Role {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Akses ditolak: Pilihan role tidak sesuai dengan data akun Anda!"})
 		return
 	}
 

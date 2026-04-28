@@ -8,12 +8,12 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
   
   const [username, setUsername] = useState(currentUser?.username || '');
   const [displayName, setDisplayName] = useState(currentUser?.username || ''); 
-  const [tagline, setTagline] = useState('');
+  // 🔥 TAGLINE UDAH GW HAPUS DARI STATE 🔥
   const [bio, setBio] = useState(currentUser?.bio || '');
   
   const [profileImage] = useState(currentUser?.avatar || '');
   const [imagePreview, setImagePreview] = useState('');
-  const [avatarFile, setAvatarFile] = useState(null); // PENTING: State buat nyimpen file fisik gambar
+  const [avatarFile, setAvatarFile] = useState(null); 
   
   const [email] = useState(currentUser?.email || '');
   const [joinDate] = useState(
@@ -31,9 +31,8 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAvatarFile(file); // Simpan file aslinya buat dikirim ke Golang
+      setAvatarFile(file); 
       
-      // Buat preview di layar
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -44,24 +43,20 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
 
   const handleSave = async () => {
     try {
-      // PENTING: Bikin FormData biar cocok sama c.PostForm dan c.FormFile di Go
       const formData = new FormData();
       formData.append('username', username);
       formData.append('bio', bio);
       
-      // Kalau user ganti foto, masukin fotonya
       if (avatarFile) {
         formData.append('avatar', avatarFile);
       }
 
-      // Kirim FormData-nya ke API
       const result = await updateProfile(currentUser.id, formData);
 
       alert('Profil berhasil diperbarui di database!');
       setIsEditing(false);
       setImagePreview('');
 
-      // Update state global App.jsx
       if (onUpdateSuccess) {
         onUpdateSuccess(result.data);
       }
@@ -86,7 +81,7 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-white rounded-lg hover:bg-gray-100"
+            className="absolute top-4 right-4 p-2 bg-white rounded-lg hover:bg-gray-100 shadow-sm transition-colors"
           >
             <X className="h-5 w-5 text-gray-600" />
           </button>
@@ -112,7 +107,7 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                   )}
                 </div>
                 {isEditing && (
-                  <label className="absolute bottom-0 right-0 p-2 bg-indigo-600 rounded-full cursor-pointer hover:bg-indigo-700 shadow-lg">
+                  <label className="absolute bottom-0 right-0 p-2 bg-indigo-600 rounded-full cursor-pointer hover:bg-indigo-700 shadow-lg transition-transform hover:scale-105">
                     <Camera className="h-5 w-5 text-white" />
                     <input
                       type="file"
@@ -149,15 +144,7 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
-                      <input
-                        type="text"
-                        value={tagline}
-                        onChange={(e) => setTagline(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none"
-                      />
-                    </div>
+                    {/* 🔥 KOLOM INPUT TAGLINE UDAH DIMUSNAHKAN DARI SINI 🔥 */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
                       <textarea
@@ -173,7 +160,7 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                     <h1 className="text-2xl font-bold text-gray-900">{displayName || username}</h1>
                     <p className="text-gray-600">@{username}</p>
                     
-                    {tagline && <p className="text-gray-700 mt-2">{tagline}</p>}
+                    {/* 🔥 TAMPILAN TAGLINE UDAH DIMUSNAHKAN DARI SINI 🔥 */}
                     {bio && <p className="text-gray-600 mt-2">{bio}</p>}
                   </>
                 )}
@@ -185,13 +172,13 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                   <>
                     <button
                       onClick={handleCancel}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
                     >
                       Batal
                     </button>
                     <button
                       onClick={handleSave}
-                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors shadow-sm"
                     >
                       <Save className="h-5 w-5" />
                       Simpan
@@ -200,7 +187,7 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                 ) : (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
                   >
                     <Edit2 className="h-5 w-5" />
                     Edit Profile

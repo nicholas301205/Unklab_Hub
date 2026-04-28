@@ -65,16 +65,20 @@ export function Navbar({ userName, userAvatar, userRole, onSearch, onGoToProfile
             {/* Pop-up Dropdown Menu */}
             {isDropdownOpen && (
               <div className="absolute right-0 top-14 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
-                <button
-                  onClick={() => {
-                    if (onGoToAdmin) onGoToAdmin();
-                    setIsDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 flex items-center gap-3 transition-colors"
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  Panel Admin
-                </button>
+                
+                {/* 🔥 LOGIKA DINAMIS: Tombol ini cuma muncul buat Admin 🔥 */}
+                {userRole?.toLowerCase() === 'admin' && (
+                  <button
+                    onClick={() => {
+                      if (onGoToAdmin) onGoToAdmin();
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 flex items-center gap-3 transition-colors"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Panel Admin
+                  </button>
+                )}
 
                 <button
                   onClick={() => {
