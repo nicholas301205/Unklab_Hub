@@ -5,7 +5,6 @@ import { ProfilePage } from './components/ProfilePage';
 import { SettingsPage } from './components/SettingsPage'; 
 import { PostCard } from './components/PostCard';
 import { CreatePostModal } from './components/CreatePostModal'; 
-// 🔥 1. IMPORT ADMIN DASHBOARD DI SINI 🔥
 import { AdminDashboard } from './components/AdminDashboard'; 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -195,8 +194,6 @@ export default function App() {
       : <Login onLoginSuccess={handleLoginSuccess} onSwitch={() => setCurrentView('register')} />;
   }
 
-  // 🔥 2. CEK ROLE ADMIN DI SINI 🔥
-  // Jika sudah login dan role-nya adalah 'admin', arahkan ke AdminDashboard
   if (currentUser?.role === 'admin') {
     return <AdminDashboard onExit={handleLogout} />;
   }
