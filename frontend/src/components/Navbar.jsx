@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import { Search, User, Settings, LogOut, ShieldCheck } from 'lucide-react';
 
-export function Navbar({ userName, onSearch, onGoToProfile, onGoToSettings, onGoToAdmin, onLogout }) {
-  // State untuk mengontrol pop-up (dropdown) menu profile
+export function Navbar({ userName, userAvatar, onSearch, onGoToProfile, onGoToSettings, onGoToAdmin, onLogout }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Helper untuk merapikan URL Avatar
+  const getAvatarUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `http://localhost:8081${path}`;
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
@@ -11,11 +17,11 @@ export function Navbar({ userName, onSearch, onGoToProfile, onGoToSettings, onGo
         <div className="flex justify-between h-16 items-center">
           
           {/* Logo */}
-          <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer">
-            <div className="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">U</span>
+          <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
+            <div className="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-indigo-200 shadow-md">
+              <span className="text-white font-black text-xl italic">U</span>
             </div>
-            <span className="font-bold text-xl text-gray-900">UNKLAB Hub</span>
+            <span className="font-black text-xl text-gray-900 tracking-tight">UNKLAB Hub</span>
           </div>
 
           {/* Kolom Pencarian */}
@@ -27,29 +33,35 @@ export function Navbar({ userName, onSearch, onGoToProfile, onGoToSettings, onGo
               <input
                 type="text"
                 placeholder="Cari topik, diskusi, atau pengguna..."
-                onChange={(e) => onSearch(e.target.value)} 
+                onChange={(e) => onSearch && onSearch(e.target.value)} 
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
               />
             </div>
           </div>
 
-          {/* Menu Profil Kanan dengan Dropdown */}
-          <div className="relative flex items-center gap-4">
+          {/* Bagian Kanan: Menu Profil */}
+          <div className="relative flex items-center gap-3 sm:gap-4">
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+              className="flex items-center gap-2 hover:bg-gray-50 px-2 sm:px-3 py-2 rounded-lg transition-colors border border-transparent hover:border-gray-200"
             >
-              <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                {userName ? userName.charAt(0) : <User className="h-5 w-5" />}
+              {/* LOGIKA AVATAR NAVBAR */}
+              <div className="h-8 w-8 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold border border-indigo-50 shadow-sm">
+                {userAvatar ? (
+                  <img src={getAvatarUrl(userAvatar)} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  userName ? userName.charAt(0).toUpperCase() : <User className="h-5 w-5" />
+                )}
               </div>
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">{userName}</span>
+              <div className="text-left hidden sm:block">
+                <span className="text-sm font-bold text-gray-700 block leading-tight">{userName || 'User'}</span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block">Mahasiswa</span>
+              </div>
             </button>
 
             {/* Pop-up Dropdown Menu */}
             {isDropdownOpen && (
               <div className="absolute right-0 top-14 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
-                
-                {/* Tombol Panel Admin */}
                 <button
                   onClick={() => {
                     if (onGoToAdmin) onGoToAdmin();
@@ -63,8 +75,8 @@ export function Navbar({ userName, onSearch, onGoToProfile, onGoToSettings, onGo
 
                 <button
                   onClick={() => {
-                    onGoToProfile();
-                    setIsDropdownOpen(false); // Tutup pop-up setelah diklik
+                    if (onGoToProfile) onGoToProfile();
+                    setIsDropdownOpen(false); 
                   }}
                   className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 flex items-center gap-3 transition-colors"
                 >
@@ -98,7 +110,6 @@ export function Navbar({ userName, onSearch, onGoToProfile, onGoToSettings, onGo
               </div>
             )}
           </div>
-          
         </div>
       </div>
     </nav>

@@ -11,6 +11,13 @@ func SetupRoutes(r *gin.Engine) {
 
 	api := r.Group("/api")
 	{
+
+		api.GET("/", func(c *gin.Context) {
+			c.JSON(200, gin.H{
+				"message": "API is running",
+			})
+		})
+
 		auth := api.Group("/auth")
 		{
 			auth.POST("/register", handlers.Register)
@@ -32,6 +39,12 @@ func SetupRoutes(r *gin.Engine) {
 			bookmarks.GET("", handlers.GetBookmarks)
 			bookmarks.POST("", handlers.AddBookmark)
 			bookmarks.DELETE("/:postId", handlers.DeleteBookmark)
+		}
+
+		// Tambahin ini di bawah blok bookmarks
+		comments := api.Group("/comments", middleware.AuthMiddleware())
+		{
+			comments.POST("", handlers.AddComment)
 		}
 
 		users := api.Group("/users", middleware.AuthMiddleware())

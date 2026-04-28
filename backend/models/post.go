@@ -11,4 +11,5 @@ type Post struct {
 	ImageURL  string    `json:"image_url"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Comments  []Comment `json:"comments" gorm:"foreignKey:PostID"`
 }

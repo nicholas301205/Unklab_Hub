@@ -1,61 +1,67 @@
 import { useState } from 'react';
 import { Camera, Save, X, User, FileText, Mail, Calendar, Edit2 } from 'lucide-react';
 import { PostCard } from './PostCard';
-import { updateProfile } from '../api/api'; // Import helper API yang sudah kita buat
+import { updateProfile } from '../api/api'; 
 
-// 1. TANGKAP PROPS currentUser, posts, onBookmark, dll dari App.jsx
 export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComment, onDeletePost, onUpdateSuccess }) {
   const [isEditing, setIsEditing] = useState(false);
   
-  // Gunakan currentUser untuk set default value agar data sinkron dengan database
-  const [username, setUsername] = useState(currentUser?.username || 'johndoe');
-  const [displayName, setDisplayName] = useState(currentUser?.username || 'John Doe'); // Di DB lu username dipake sebagai identitas utama
-  const [tagline, setTagline] = useState('Mahasiswa Teknik Informatika | Tech Enthusiast');
-  const [bio, setBio] = useState(currentUser?.bio || 'Suka coding dan belajar hal baru. Always open for collaboration!');
-  const [profileImage, setProfileImage] = useState(currentUser?.avatar || '');
-  const [imagePreview, setImagePreview] = useState('');
+  const [username, setUsername] = useState(currentUser?.username || '');
+  const [displayName, setDisplayName] = useState(currentUser?.username || ''); 
+  const [tagline, setTagline] = useState('');
+  const [bio, setBio] = useState(currentUser?.bio || '');
   
-  // Email dan Join Date diambil dari data user asli di database
-  const [email] = useState(currentUser?.email || 'john.doe@unklab.ac.id');
-  const [joinDate] = useState(new Date(currentUser?.created_at).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) || 'Januari 2024');
+  const [profileImage] = useState(currentUser?.avatar || '');
+  const [imagePreview, setImagePreview] = useState('');
+  const [avatarFile, setAvatarFile] = useState(null); // PENTING: State buat nyimpen file fisik gambar
+  
+  const [email] = useState(currentUser?.email || '');
+  const [joinDate] = useState(
+    currentUser?.created_at 
+      ? new Date(currentUser.created_at).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) 
+      : ''
+  );
 
-  // 2. STATE UNTUK PINDAH-PINDAH TAB
   const [activeTab, setActiveTab] = useState('diskusi_saya');
 
-  // 3. LOGIKA FILTERING DATA ASLI
   const myPosts = posts ? posts.filter(p => p.user && p.user.username === currentUser?.username) : [];
   const bookmarkedPosts = posts ? posts.filter(p => p.isBookmarked) : [];
-
   const displayedPosts = activeTab === 'diskusi_saya' ? myPosts : bookmarkedPosts;
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      setAvatarFile(file); // Simpan file aslinya buat dikirim ke Golang
+      
+      // Buat preview di layar
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
-        setProfileImage(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // --- FUNGSI SAVE YANG TERKONEKSI KE BACKEND ---
   const handleSave = async () => {
     try {
-      // Kirim data ke API Go (PUT /api/users/:id)
-      const result = await updateProfile(currentUser.id, {
-        username: username,
-        bio: bio,
-        avatar: profileImage, // Ini akan masuk ke kolom avatar di MySQL
-        email: email
-      });
+      // PENTING: Bikin FormData biar cocok sama c.PostForm dan c.FormFile di Go
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('bio', bio);
+      
+      // Kalau user ganti foto, masukin fotonya
+      if (avatarFile) {
+        formData.append('avatar', avatarFile);
+      }
+
+      // Kirim FormData-nya ke API
+      const result = await updateProfile(currentUser.id, formData);
 
       alert('Profil berhasil diperbarui di database!');
       setIsEditing(false);
       setImagePreview('');
 
-      // PENTING: Update state global di App.jsx & LocalStorage agar data tidak reset saat refresh
+      // Update state global App.jsx
       if (onUpdateSuccess) {
         onUpdateSuccess(result.data);
       }
@@ -68,14 +74,14 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
   const handleCancel = () => {
     setIsEditing(false);
     setImagePreview('');
-    // Reset field ke data currentUser yang lama
-    setUsername(currentUser?.username);
-    setBio(currentUser?.bio);
+    setAvatarFile(null);
+    setUsername(currentUser?.username || '');
+    setDisplayName(currentUser?.username || '');
+    setBio(currentUser?.bio || '');
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Cover Image */}
       <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-48 relative">
         {onClose && (
           <button
@@ -88,17 +94,17 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Profile Header */}
         <div className="bg-white rounded-lg shadow-md -mt-20 relative">
           <div className="p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
+              
               {/* Profile Picture */}
               <div className="relative -mt-16">
                 <div className="w-32 h-32 bg-indigo-600 rounded-full border-4 border-white flex items-center justify-center overflow-hidden">
                   {imagePreview || profileImage ? (
                     <img
                       src={imagePreview || (profileImage.startsWith('http') ? profileImage : `http://localhost:8081${profileImage}`)}
-                      alt={displayName}
+                      alt={username}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -122,7 +128,6 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
               <div className="flex-1">
                 {isEditing ? (
                   <div className="space-y-4">
-                    {/* Display Name */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
                       <input
@@ -132,7 +137,6 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none"
                       />
                     </div>
-                    {/* Username */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                       <div className="relative">
@@ -145,18 +149,15 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                         />
                       </div>
                     </div>
-                    {/* Tagline */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
                       <input
                         type="text"
                         value={tagline}
                         onChange={(e) => setTagline(e.target.value)}
-                        placeholder="Deskripsikan dirimu dalam satu kalimat"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none"
                       />
                     </div>
-                    {/* Bio */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
                       <textarea
@@ -169,10 +170,11 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                   </div>
                 ) : (
                   <>
-                    <h1 className="text-2xl font-bold text-gray-900">{username}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{displayName || username}</h1>
                     <p className="text-gray-600">@{username}</p>
-                    <p className="text-gray-700 mt-2">{tagline}</p>
-                    <p className="text-gray-600 mt-2">{bio}</p>
+                    
+                    {tagline && <p className="text-gray-700 mt-2">{tagline}</p>}
+                    {bio && <p className="text-gray-600 mt-2">{bio}</p>}
                   </>
                 )}
               </div>
@@ -207,17 +209,21 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
               </div>
             </div>
 
-            {/* 4. STATS & INFO */}
+            {/* STATS & INFO */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Mail className="h-5 w-5" />
-                  <span className="text-sm">{email}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Calendar className="h-5 w-5" />
-                  <span className="text-sm">Bergabung {joinDate}</span>
-                </div>
+                {email && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Mail className="h-5 w-5" />
+                    <span className="text-sm">{email}</span>
+                  </div>
+                )}
+                {joinDate && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Calendar className="h-5 w-5" />
+                    <span className="text-sm">Bergabung {joinDate}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-gray-600">
                   <FileText className="h-5 w-5" />
                   <span className="text-sm font-medium">{myPosts.length} Diskusi</span>
@@ -227,7 +233,7 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
           </div>
         </div>
 
-        {/* 5. TABS */}
+        {/* TABS */}
         <div className="mt-6">
           <div className="border-b border-gray-200">
             <nav className="flex gap-8">
@@ -254,7 +260,6 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
             </nav>
           </div>
 
-          {/* 6. LOOPING POSTINGAN ASLI */}
           <div className="mt-6 space-y-4 pb-8">
             {displayedPosts.length > 0 ? (
               displayedPosts.map((post) => (

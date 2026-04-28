@@ -3,62 +3,86 @@ import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { ProfilePage } from './components/ProfilePage';
 import { PostCard } from './components/PostCard';
+import { CreatePostModal } from './components/CreatePostModal'; 
 import Login from './pages/Login';
 import Register from './pages/Register';
-import { api } from './api/api';
+import { api, getBookmarks, addBookmark, removeBookmark, addComment, deletePost } from './api/api';
 
 export default function App() {
-  // --- STATE DENGAN PROTEKSI ---
+  // --- 1. STATE INITIALIZATION ---
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('isLoggedIn') === 'true';
+    try {
+      return localStorage.getItem('isLoggedIn') === 'true';
+    } catch {
+      return false;
+    }
   });
 
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem('user');
-      // Pastikan data user ada dan bukan string "undefined"
       return savedUser && savedUser !== "undefined" ? JSON.parse(savedUser) : null;
-    } catch (e) {
+    } catch {
       return null;
     }
   });
 
   const [currentView, setCurrentView] = useState(() => {
-    return localStorage.getItem('isLoggedIn') === 'true' ? 'beranda' : 'login';
+    try {
+      const savedLogin = localStorage.getItem('isLoggedIn');
+      return savedLogin === 'true' ? 'beranda' : 'login';
+    } catch {
+      return 'login';
+    }
   });
 
   const [posts, setPosts] = useState([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // --- FETCH DATA SAAT LOGIN ---
+  // --- 2. FETCH DATA POSTINGAN & BOOKMARK ---
   useEffect(() => {
     if (isLoggedIn && currentUser?.username) {
-      api.get('/posts')
-        .then(res => {
-          const mapped = res.data.data.map(p => ({
-            id: p.id,
-            user: { name: p.user.username, username: p.user.username },
-            title: p.title,
-            content: p.content,
-            category: "Teknologi",
-            timestamp: new Date(p.created_at).toLocaleDateString('id-ID'),
-            isBookmarked: false,
-            image: p.image_url ? `http://localhost:8081${p.image_url}` : null 
-          }));
-          setPosts(mapped);
-        })
-        .catch(err => {
-          console.error("Gagal ambil post:", err);
-        });
+      Promise.all([
+        api.get('/posts'),
+        getBookmarks().catch(() => ({ data: [] })) 
+      ])
+      .then(([postsRes, bookmarksRes]) => {
+        const myBookmarks = bookmarksRes.data || [];
+        const bookmarkedPostIds = myBookmarks.map(b => b.post_id);
+
+        const mapped = postsRes.data.data.map(p => ({
+          id: p.id,
+          user: { 
+            name: p.user.username, 
+            username: p.user.username, 
+            avatar: p.user.avatar 
+          }, 
+          title: p.title,
+          content: p.content,
+          category: p.category || "Akademik",
+          timestamp: new Date(p.created_at).toLocaleDateString('id-ID'),
+          isBookmarked: bookmarkedPostIds.includes(p.id), 
+          
+          // SEKARANG INI BAKAL TERISI KARENA BACKEND UDAH PRELOAD
+          comments: p.comments || [], 
+          
+          image: p.image_url ? `http://localhost:8081${p.image_url}` : null 
+        }));
+        setPosts(mapped);
+      })
+      .catch(err => {
+        console.error("Gagal sinkronisasi data:", err);
+        if (err.response?.status === 401) handleLogout();
+      });
     }
   }, [isLoggedIn, currentUser]);
 
-  // --- HANDLERS ---
+  // --- 3. AUTH & PROFILE HANDLERS ---
   const handleLoginSuccess = (userData) => {
     if (!userData) return;
     setCurrentUser(userData);
     setIsLoggedIn(true);
     setCurrentView('beranda');
-    
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('user', JSON.stringify(userData));
   };
@@ -77,26 +101,82 @@ export default function App() {
     localStorage.setItem('user', JSON.stringify(newUser));
   };
 
-  // --- LOGIC RENDER ---
+  // --- 4. POST INTERACTION HANDLERS ---
+  const handlePostCreated = (newPost) => {
+    const formattedPost = {
+      id: newPost.id,
+      user: { name: currentUser.username, username: currentUser.username, avatar: currentUser.avatar },
+      title: newPost.title,
+      content: newPost.content,
+      category: newPost.category || "Akademik",
+      timestamp: new Date().toLocaleDateString('id-ID'),
+      isBookmarked: false,
+      comments: [],
+      image: newPost.image_url ? `http://localhost:8081${newPost.image_url}` : null 
+    };
+    setPosts([formattedPost, ...posts]);
+  };
 
-  // Proteksi: Jika data user ilang tapi status login true, paksa logout
-  if (isLoggedIn && !currentUser) {
-    handleLogout();
-    return null;
-  }
+  const handleBookmark = async (postId) => {
+    const postToUpdate = posts.find(p => p.id === postId);
+    if (!postToUpdate) return;
+    const isCurrentlyBookmarked = postToUpdate.isBookmarked;
 
-  // Tampilan sebelum login
+    setPosts(posts.map(p => p.id === postId ? { ...p, isBookmarked: !isCurrentlyBookmarked } : p));
+    
+    try {
+      if (isCurrentlyBookmarked) {
+        await removeBookmark(postId); 
+      } else {
+        await addBookmark(postId); 
+      }
+    } catch (err) {
+      setPosts(posts.map(p => p.id === postId ? { ...p, isBookmarked: isCurrentlyBookmarked } : p));
+      alert("Gagal update bookmark: " + (err.response?.data?.error || "Koneksi bermasalah"));
+    }
+  };
+
+  const handleAddComment = async (postId, text) => {
+    try {
+      const res = await addComment(postId, text);
+      
+      // Deteksi otomatis apakah data di dalem field "data" atau langsung di body
+      const newComment = res.data?.data || res.data; 
+      
+      setPosts(prevPosts => prevPosts.map(p => {
+        if (p.id === postId) {
+          return { ...p, comments: [...(p.comments || []), newComment] };
+        }
+        return p;
+      }));
+    } catch (err) {
+      console.error("Gagal tambah komentar:", err);
+      alert("Gagal mengirim komentar: " + (err.response?.data?.error || "Koneksi bermasalah"));
+    }
+  };
+
+  const handleDeletePost = async (id) => {
+    if (!window.confirm("Yakin mau hapus diskusi ini?")) return;
+    try {
+      await deletePost(id);
+      setPosts(posts.filter(p => p.id !== id));
+    } catch (err) {
+      alert("Gagal menghapus: " + (err.response?.data?.error || "Koneksi bermasalah"));
+    }
+  };
+
+  // --- 5. RENDER LOGIC ---
   if (!isLoggedIn) {
     return currentView === 'register' 
       ? <Register onSwitch={() => setCurrentView('login')} /> 
       : <Login onLoginSuccess={handleLoginSuccess} onSwitch={() => setCurrentView('register')} />;
   }
 
-  // Tampilan sesudah login (Dashboard)
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <Navbar 
         userName={currentUser?.username} 
+        userAvatar={currentUser?.avatar} 
         onGoToProfile={() => setCurrentView('profile')} 
         onLogout={handleLogout} 
       />
@@ -106,6 +186,7 @@ export default function App() {
           <Sidebar 
             activeMenu={currentView} 
             onMenuClick={(v) => setCurrentView(v)} 
+            onCreatePost={() => setIsCreateModalOpen(true)} 
           />
         </div>
         
@@ -116,24 +197,39 @@ export default function App() {
               posts={posts} 
               onUpdateSuccess={handleUpdateUser}
               onClose={() => setCurrentView('beranda')}
-              onBookmark={() => {}} 
-              onAddComment={() => {}}
-              onDeletePost={(id) => setPosts(posts.filter(p => p.id !== id))}
+              onBookmark={handleBookmark} 
+              onAddComment={handleAddComment}
+              onDeletePost={handleDeletePost}
             />
           ) : (
             <div className="space-y-4">
-              <h1 className="text-2xl font-bold text-gray-900">Beranda Diskusi</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-6">Beranda Diskusi</h1>
               {posts.length > 0 ? (
-                posts.map(p => <PostCard key={p.id} post={p} currentUser={currentUser} />)
+                posts.map(p => (
+                  <PostCard 
+                    key={p.id} 
+                    post={p} 
+                    currentUser={currentUser} 
+                    onBookmark={handleBookmark}
+                    onAddComment={handleAddComment}
+                    onDeletePost={handleDeletePost}
+                  />
+                ))
               ) : (
                 <div className="p-10 text-center bg-white rounded-xl border border-gray-100 text-gray-400">
-                  Belum ada diskusi tersedia...
+                  Belum ada diskusi tersedia.
                 </div>
               )}
             </div>
           )}
         </main>
       </div>
+
+      <CreatePostModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onSuccess={handlePostCreated} 
+      />
     </div>
   );
 }
