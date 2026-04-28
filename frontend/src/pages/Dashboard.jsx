@@ -25,7 +25,7 @@ export default function Dashboard() {
   ]);
 
   // 2. FUNGSI UNTUK MENAMBAH POSTINGAN BARU
-  const handleAddNewPost = (title, content, image) => {
+  const handleAddNewPost = (title, content) => {
 
     console.log("Menerima data dari modal ->", "Judul:", title, "| Isi:", content);
     

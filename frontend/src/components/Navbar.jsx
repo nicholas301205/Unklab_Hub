@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, User, Settings, LogOut, ShieldCheck } from 'lucide-react';
 
-export function Navbar({ userName, userAvatar, onSearch, onGoToProfile, onGoToSettings, onGoToAdmin, onLogout }) {
+export function Navbar({ userName, userAvatar, userRole, onSearch, onGoToProfile, onGoToSettings, onGoToAdmin, onLogout }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Helper untuk merapikan URL Avatar
@@ -38,9 +38,10 @@ export function Navbar({ userName, userAvatar, onSearch, onGoToProfile, onGoToSe
               />
             </div>
           </div>
-
+          
           {/* Bagian Kanan: Menu Profil */}
           <div className="relative flex items-center gap-3 sm:gap-4">
+            
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center gap-2 hover:bg-gray-50 px-2 sm:px-3 py-2 rounded-lg transition-colors border border-transparent hover:border-gray-200"
@@ -55,7 +56,9 @@ export function Navbar({ userName, userAvatar, onSearch, onGoToProfile, onGoToSe
               </div>
               <div className="text-left hidden sm:block">
                 <span className="text-sm font-bold text-gray-700 block leading-tight">{userName || 'User'}</span>
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block">Mahasiswa</span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block">
+                  {userRole?.toLowerCase() === "admin" ? "Admin" : "Mahasiswa"}
+                </span>
               </div>
             </button>
 
