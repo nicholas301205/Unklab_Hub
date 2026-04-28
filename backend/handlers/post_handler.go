@@ -62,15 +62,18 @@ func CreatePost(c *gin.Context) {
 	title := c.PostForm("title")
 	content := c.PostForm("content")
 
+	category := c.PostForm("category")
+
 	if title == "" || content == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Title dan content wajib diisi"})
 		return
 	}
 
 	post := models.Post{
-		UserID:  userID.(uint),
-		Title:   title,
-		Content: content,
+		UserID:   userID.(uint),
+		Title:    title,
+		Content:  content,
+		Category: category,
 	}
 
 	file, err := c.FormFile("image")

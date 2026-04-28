@@ -1,6 +1,5 @@
 import { Home, Bookmark, User, Plus } from 'lucide-react';
 
-// TANGKAP activeCategory DAN onSelectCategory DARI APP.JSX
 export function Sidebar({ activeMenu, onMenuClick, onCreatePost, activeCategory, onSelectCategory }) {
   const menuItems = [
     { id: 'beranda', label: 'Beranda', icon: Home },
@@ -8,7 +7,6 @@ export function Sidebar({ activeMenu, onMenuClick, onCreatePost, activeCategory,
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
-  // Tambahkan 'Semua' ke dalam daftar pilihan
   const categories = ['Semua', 'Akademik', 'Organisasi', 'Olahraga', 'Teknologi'];
 
   return (
@@ -30,7 +28,11 @@ export function Sidebar({ activeMenu, onMenuClick, onCreatePost, activeCategory,
           return (
             <button
               key={item.id}
-              onClick={() => onMenuClick(item.id)}
+              onClick={() => {
+                onMenuClick(item.id);
+                // Kalau pindah menu lain (kayak profile/bookmark), reset kategori ke 'Semua'
+                if (item.id !== 'beranda') onSelectCategory('Semua'); 
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
                 isActive 
                   ? 'bg-indigo-50 text-indigo-600' 
@@ -55,8 +57,10 @@ export function Sidebar({ activeMenu, onMenuClick, onCreatePost, activeCategory,
             return (
               <button 
                 key={kategori}
-                // SAAT DIKLIK, KIRIM NAMA KATEGORI KE APP.JSX
-                onClick={() => onSelectCategory(kategori)}
+                onClick={() => {
+                  onSelectCategory(kategori);
+                  onMenuClick('beranda');
+                }}
                 className={`w-full text-left px-4 py-2.5 text-sm rounded-lg transition-colors ${
                   isActive 
                     ? 'text-indigo-600 bg-indigo-50 font-semibold' 
