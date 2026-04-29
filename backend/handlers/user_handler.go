@@ -128,13 +128,30 @@ func GetAllUsers(c *gin.Context) {
 // DeleteUser (hapus user admin only)
 func DeleteUser(c *gin.Context) {
 	id := c.Param("id")
-	var user models.User
 
-	if err := config.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User tidak ditemukan"})
-		return
+	// 1. Ambil semua post milik user
+	var posts []models.Post
+	config.DB.Where("user_id = ?", id).Find(&posts)
+
+	// 2. Loop setiap post
+	for _, post := range posts {
+		// hapus bookmarks yang terkait post
+		config.DB.Where("post_id = ?", post.ID).Delete(&models.Bookmark{})
+
+		// hapus reports berdasarkan post_id (bukan user_id!)
+		config.DB.Where("post_id = ?", post.ID).Delete(&models.Report{})
+
+		// (kalau ada comment)
+		config.DB.Where("post_id = ?", post.ID).Delete(&models.Comment{})
 	}
 
-	config.DB.Delete(&user)
-	c.JSON(http.StatusOK, gin.H{"message": "User berhasil dihapus"})
+	// 3. Baru hapus posts
+	config.DB.Where("user_id = ?", id).Delete(&models.Post{})
+
+	// 4. Baru hapus user
+	config.DB.Delete(&models.User{}, id)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "User dan semua data terkait berhasil dihapus",
+	})
 }
