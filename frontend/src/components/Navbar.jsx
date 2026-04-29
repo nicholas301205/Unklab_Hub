@@ -1,83 +1,121 @@
-import { Search, Bell, LogOut, User, Settings } from 'lucide-react';
 import { useState } from 'react';
+import { Search, User, Settings, LogOut, ShieldCheck } from 'lucide-react';
 
-export function Navbar({ onSearch, userName, userAvatar }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
+export function Navbar({ userName, userAvatar, userRole, onSearch, onGoToProfile, onGoToSettings, onGoToAdmin, onLogout }) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    onSearch(searchQuery);
+  // Helper untuk merapikan URL Avatar
+  const getAvatarUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `http://localhost:8081${path}`;
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between h-16 items-center">
+          
           {/* Logo */}
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-indigo-600">UNKLAB Hub</h1>
+          <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
+            <div className="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-indigo-200 shadow-md">
+              <span className="text-white font-black text-xl italic">U</span>
+            </div>
+            <span className="font-black text-xl text-gray-900 tracking-tight">UNKLAB Hub</span>
           </div>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-xl mx-8">
+          {/* Kolom Pencarian */}
+          <div className="flex-1 max-w-2xl px-8 hidden md:block">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none"
-                placeholder="Cari diskusi..."
+                placeholder="Cari topik, diskusi, atau pengguna..."
+                onChange={(e) => onSearch && onSearch(e.target.value)} 
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
               />
             </div>
-          </form>
-
-          {/* Right Section */}
-          <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-              <Bell className="h-6 w-6" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+          </div>
+          
+          {/* Bagian Kanan: Menu Profil */}
+          <div className="relative flex items-center gap-3 sm:gap-4">
+            
+            <button 
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-2 hover:bg-gray-50 px-2 sm:px-3 py-2 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+            >
+              {/* LOGIKA AVATAR NAVBAR */}
+              <div className="h-8 w-8 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold border border-indigo-50 shadow-sm">
+                {userAvatar ? (
+                  <img src={getAvatarUrl(userAvatar)} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  userName ? userName.charAt(0).toUpperCase() : <User className="h-5 w-5" />
+                )}
+              </div>
+              <div className="text-left hidden sm:block">
+                <span className="text-sm font-bold text-gray-700 block leading-tight">{userName || 'User'}</span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block">
+                  {userRole?.toLowerCase() === "admin" ? "Admin" : "Mahasiswa"}
+                </span>
+              </div>
             </button>
 
-            {/* User Menu */}
-            <div className="relative">
-              <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
-                  {userAvatar ? (
-                    <img src={userAvatar} alt={userName} className="w-8 h-8 rounded-full" />
-                  ) : (
-                    <span className="text-white font-medium">{userName.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <span className="text-sm font-medium text-gray-700">{userName}</span>
-              </button>
+            {/* Pop-up Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute right-0 top-14 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50">
+                
+                {/* 🔥 LOGIKA DINAMIS: Tombol ini cuma muncul buat Admin 🔥 */}
+                {userRole?.toLowerCase() === 'admin' && (
+                  <button
+                    onClick={() => {
+                      if (onGoToAdmin) onGoToAdmin();
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 flex items-center gap-3 transition-colors"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Panel Admin
+                  </button>
+                )}
 
-              {/* Dropdown */}
-              {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
-                  <a href="#profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <User className="h-4 w-4" />
-                    Profile Saya
-                  </a>
-                  <a href="#settings" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <Settings className="h-4 w-4" />
-                    Pengaturan
-                  </a>
-                  <hr className="my-1" />
-                  <a href="#logout" className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                    <LogOut className="h-4 w-4" />
-                    Keluar
-                  </a>
-                </div>
-              )}
-            </div>
+                <button
+                  onClick={() => {
+                    if (onGoToProfile) onGoToProfile();
+                    setIsDropdownOpen(false); 
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 flex items-center gap-3 transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  Profile
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (onGoToSettings) onGoToSettings();
+                    setIsDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 flex items-center gap-3 transition-colors"
+                >
+                  <Settings className="h-4 w-4" />
+                  Pengaturan
+                </button>
+                
+                <div className="h-px bg-gray-100 my-1"></div>
+                
+                <button
+                  onClick={() => {
+                    if (onLogout) onLogout();
+                    setIsDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

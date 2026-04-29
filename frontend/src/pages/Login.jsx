@@ -1,148 +1,78 @@
 import { useState } from 'react';
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { api } from '../api/api';
+import gridBg from '../assets/login-background.png'; 
 
-export default function Login() {
+export default function Login({ onLoginSuccess, onSwitch }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  // State for role, default to 'user'
+  const [role, setRole] = useState('user'); 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login attempt:', { email, password, rememberMe });
-    // Add your login logic here
-    // Contoh set error: setErrorMessage('Email atau password salah!');
+    try {
+      // Sending role with other credentials
+      const response = await api.post('/auth/login', { email, password, role });
+      
+      // onLoginSuccess now ideally accepts role info from the backend
+      onLoginSuccess({ ...response.data.user, role });
+    } catch (err) {
+      alert(err.response?.data?.error || "Email atau Password Salah!");
+    }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full max-w-md px-6">
-        {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
-              <Lock className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">UNKLAB Hub</h1>
-            <p className="text-gray-600">Masuk ke akun Anda</p>
-          </div>
+    // 2. Kontainer utama dengan latar belakang gambar gelap, cover penuh, dan perataan tengah
+    <div 
+      className="min-h-screen flex items-center justify-center px-4 bg-gray-950 bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${gridBg})` }}
+    >
+      {/* 3. Kartu Login Transparan Buram (Glassmorphism Effect) */}
+      <div className="bg-gray-900/70 backdrop-blur-sm p-10 rounded-3xl shadow-2xl w-full max-w-md border border-gray-800">
+        
+        {/* 4. Bagian Header dengan Teks Judul dan Subtitle yang Lebih Terang */}
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-100">UNKLAB Hub</h2>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Input */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition"
-                  placeholder="nama@unklab.ac.id"
-                  required
-                />
-              </div>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* 5. Dropdown dengan Latar Belakang Gelap dan Teks Terang */}
+          <select 
+            value={role} 
+            onChange={e => setRole(e.target.value)}
+            className="w-full p-4 border border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-800 text-gray-100 text-sm"
+          >
+            <option value="user">Login sebagai User</option>
+            <option value="admin">Login sebagai Admin</option>
+          </select>
 
-            {/* Password Input */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition"
-                  placeholder="Masukkan password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-600 border-gray-300 rounded cursor-pointer"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
-                  Ingat saya
-                </label>
-              </div>
-              <a href="#" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-                Lupa password?
-              </a>
-            </div>
-
-            {/* Login Button */}
-            <button
-              type="submit"
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition duration-200"
-            >
-              Login
-            </button>
-          </form>
-
-          {/* Menampilkan error jika ada */}
-          {errorMessage && (
-            <p className="mt-4 text-sm text-center text-red-500">{errorMessage}</p>
-          )}
-
-          {/* Divider */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Atau</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Register Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Belum punya akun?{' '}
-              <a href="/register" className="text-indigo-600 hover:text-indigo-700 font-medium">
-                Daftar sekarang
-              </a>
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-600 mt-6">
-          © 2026 UNKLAB Hub. All rights reserved.
+          {/* 6. Input Fields dengan Latar Belakang Gelap, Teks Terang, dan Placeholder Abu-abu */}
+          <input 
+            type="email" 
+            placeholder="Email" 
+            className="w-full p-4 border border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-800 text-gray-100 placeholder-gray-500 text-sm" 
+            onChange={e => setEmail(e.target.value)} 
+            required 
+          />
+          <input 
+            type="password" 
+            placeholder="Password" 
+            className="w-full p-4 border border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-800 text-gray-100 placeholder-gray-500 text-sm" 
+            onChange={e => setPassword(e.target.value)} 
+            required 
+          />
+          
+          {/* 7. Tombol "Masuk" yang Membulat Penuh (rounded-full) dengan Teks Putih Tebal */}
+          <button 
+            type="submit" 
+            className="w-full bg-indigo-500 text-white py-4 rounded-full font-bold hover:bg-indigo-600 transition"
+          >
+            Masuk
+          </button>
+        </form>
+        
+        {/* 8. Teks Footer dengan Warna Terang dan Tautan yang Menarik */}
+        <p className="mt-6 text-center text-gray-400 text-sm">
+          Belum punya akun? <button onClick={onSwitch} className="text-indigo-400 font-bold hover:underline">Daftar sekarang</button>
         </p>
       </div>
     </div>

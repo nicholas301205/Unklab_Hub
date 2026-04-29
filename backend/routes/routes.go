@@ -11,6 +11,13 @@ func SetupRoutes(r *gin.Engine) {
 
 	api := r.Group("/api")
 	{
+
+		api.GET("/", func(c *gin.Context) {
+			c.JSON(200, gin.H{
+				"message": "API is running",
+			})
+		})
+
 		auth := api.Group("/auth")
 		{
 			auth.POST("/register", handlers.Register)
@@ -34,8 +41,21 @@ func SetupRoutes(r *gin.Engine) {
 			bookmarks.DELETE("/:postId", handlers.DeleteBookmark)
 		}
 
+		comments := api.Group("/comments", middleware.AuthMiddleware())
+		{
+			comments.POST("", handlers.AddComment)
+		}
+
+		reports := api.Group("/reports")
+		{
+			reports.POST("", middleware.AuthMiddleware(), handlers.CreateReport)
+		}
+
 		users := api.Group("/users", middleware.AuthMiddleware())
 		{
+			// 🔥 RUTE GANTI PASSWORD DIMASUKIN KE SINI (DI ATAS /:id) 🔥
+			users.PUT("/change-password", handlers.ChangePassword)
+
 			users.GET("/:id", handlers.GetProfile)
 			users.PUT("/:id", handlers.UpdateProfile)
 		}
@@ -44,6 +64,7 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			admin.GET("/users", handlers.GetAllUsers)
 			admin.DELETE("/users/:id", handlers.DeleteUser)
+			admin.GET("/reports", handlers.GetReports)
 		}
 	}
 }

@@ -1,117 +1,169 @@
+import { useState, useRef } from 'react';
 import { X, Image as ImageIcon, Send } from 'lucide-react';
-import { useState } from 'react';
+import { createPost } from '../api/api';
 
-export function CreatePostModal({ isOpen, onClose, onSubmit }) {
+export function CreatePostModal({ isOpen, onClose, onSuccess }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [image, setImage] = useState(null);
+  const [category, setCategory] = useState('Akademik'); // State baru untuk Kategori (Default: Akademik)
+  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const fileInputRef = useRef(null);
+
+  // Daftar kategori (Tanpa 'Semua' karena ini buat bikin post)
+  const categories = ['Akademik', 'Organisasi', 'Olahraga', 'Teknologi'];
 
   if (!isOpen) return null;
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImage(file);
+      setImageFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
+      reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(title, content, image || undefined);
-    setTitle('');
-    setContent('');
-    setImage(null);
-    setImagePreview('');
-    onClose();
+    if (!title.trim() || !content.trim()) {
+      alert("Judul dan isi diskusi tidak boleh kosong, twin!");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('category', category); // Kirim kategori yang dipilih ke Golang
+      
+      if (imageFile) {
+        formData.append('image', imageFile); 
+      }
+
+      const result = await createPost(formData);
+      
+      alert("Diskusi berhasil dibuat!");
+      
+      // Bersihkan form
+      setTitle('');
+      setContent('');
+      setCategory('Akademik'); // Reset ke default
+      setImageFile(null);
+      setImagePreview('');
+      
+      if (onSuccess) {
+        onSuccess(result.data);
+      }
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Gagal membuat diskusi.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Buat Diskusi Baru</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X className="h-5 w-5 text-gray-500" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden">
+        {/* Header Modal */}
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+          <h2 className="text-xl font-bold text-gray-900">Buat Diskusi Baru</h2>
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6">
-          {/* Title Input */}
-          <div className="mb-4">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Judul Diskusi
-            </label>
+        {/* Body Modal */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Judul Diskusi</label>
             <input
-              id="title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none"
-              placeholder="Tulis judul yang menarik..."
-              required
+              placeholder="Apa yang ingin kamu diskusikan?"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition"
+              disabled={isLoading}
             />
           </div>
 
-          {/* Content Textarea */}
-          <div className="mb-4">
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-              Konten
-            </label>
+          {/* Kategori Dropdown */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Kategori</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none transition cursor-pointer"
+              disabled={isLoading}
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Isi Diskusi</label>
             <textarea
-              id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none resize-none"
-              placeholder="Apa yang ingin kamu diskusikan?"
-              required
+              placeholder="Ceritakan lebih detail di sini..."
+              rows={4}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none resize-none transition"
+              disabled={isLoading}
             />
           </div>
 
-          {/* Image Preview */}
-          {imagePreview && (
-            <div className="mb-4 relative">
-              <img src={imagePreview} alt="Preview" className="w-full rounded-lg max-h-64 object-cover" />
+          {/* Image Upload Area */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Lampiran Gambar (Opsional)</label>
+            {imagePreview ? (
+              <div className="relative w-full h-40 rounded-xl border border-gray-200 overflow-hidden group">
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                <button 
+                  type="button"
+                  onClick={() => { setImageFile(null); setImagePreview(''); }}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
-                onClick={() => {
-                  setImage(null);
-                  setImagePreview('');
-                }}
-                className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-6 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition"
               >
-                <X className="h-4 w-4 text-gray-600" />
+                <ImageIcon className="w-8 h-8 mb-2" />
+                <span className="font-medium">Klik untuk upload gambar</span>
               </button>
-            </div>
-          )}
+            )}
+            <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
+          </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer">
-              <ImageIcon className="h-5 w-5" />
-              <span className="text-sm font-medium">Tambah Gambar</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-            </label>
-
+          {/* Footer Modal */}
+          <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2.5 font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition"
+            >
+              Batal
+            </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
+              disabled={isLoading}
+              className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition shadow-lg shadow-indigo-200"
             >
-              <Send className="h-5 w-5" />
-              Posting
+              <Send className="w-4 h-4" />
+              {isLoading ? 'Memposting...' : 'Posting Diskusi'}
             </button>
           </div>
         </form>

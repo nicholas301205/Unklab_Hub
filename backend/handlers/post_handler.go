@@ -12,10 +12,12 @@ import (
 )
 
 // GetAllPosts (Mengambil semua post dengan opsi search dan sort)
+// GetAllPosts (Mengambil semua post dengan opsi search dan sort)
 func GetAllPosts(c *gin.Context) {
 	var posts []models.Post
 
-	query := config.DB.Preload("User")
+	// 🔥 UBAH BARIS INI: Tambahin Preload buat bawa Komentar dan User yang komen 🔥
+	query := config.DB.Preload("User").Preload("Comments").Preload("Comments.User")
 
 	// Search
 	if search := c.Query("q"); search != "" {
@@ -44,7 +46,8 @@ func GetPostByID(c *gin.Context) {
 	id := c.Param("id")
 	var post models.Post
 
-	if err := config.DB.Preload("User").First(&post, id).Error; err != nil {
+	// 🔥 UBAH BARIS INI JUGA 🔥
+	if err := config.DB.Preload("User").Preload("Comments").Preload("Comments.User").First(&post, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post tidak ditemukan"})
 		return
 	}
@@ -59,15 +62,18 @@ func CreatePost(c *gin.Context) {
 	title := c.PostForm("title")
 	content := c.PostForm("content")
 
+	category := c.PostForm("category")
+
 	if title == "" || content == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Title dan content wajib diisi"})
 		return
 	}
 
 	post := models.Post{
-		UserID:  userID.(uint),
-		Title:   title,
-		Content: content,
+		UserID:   userID.(uint),
+		Title:    title,
+		Content:  content,
+		Category: category,
 	}
 
 	file, err := c.FormFile("image")
@@ -127,6 +133,7 @@ func UpdatePost(c *gin.Context) {
 }
 
 // DeletePost (Menghapus post berdasarkan ID, yang bisa cuma owner atau admin yang hapus)
+// DeletePost (Menghapus post berdasarkan ID, yang bisa cuma owner atau admin yang hapus)
 func DeletePost(c *gin.Context) {
 	id := c.Param("id")
 	userID, _ := c.Get("userID")
@@ -144,6 +151,19 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	config.DB.Delete(&post)
-	c.JSON(http.StatusOK, gin.H{"message": "Post berhasil dihapus"})
+	// 🔥 1. Hapus SEMUA komentar yang nyangkut di post ini biar Database gak ngamuk
+	config.DB.Where("post_id = ?", post.ID).Delete(&models.Comment{})
+
+	// 🔥 2. Hapus SEMUA bookmark yang nyangkut di post ini
+	config.DB.Where("post_id = ?", post.ID).Delete(&models.Bookmark{})
+
+	// 🔥 3. Baru hapus post utamanya (Tambah pengecekan error!)
+	// Catatan: Pakai .Unscoped() kalau lu pengen bener-bener hilang dari tabel MySQL lu
+	// (Kalau nggak pake Unscoped, GORM biasanya cuma ngisi kolom deleted_at / soft delete)
+	if err := config.DB.Unscoped().Delete(&post).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus post dari database"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Post beserta interaksinya berhasil dihapus"})
 }
