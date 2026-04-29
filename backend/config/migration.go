@@ -12,6 +12,7 @@ func MigrateDB() {
 		&models.Post{},
 		&models.Bookmark{},
 		&models.Comment{},
+		&models.Report{},
 	)
 	if err != nil {
 		fmt.Println("Migrasi gagal:", err)

@@ -47,6 +47,11 @@ func SetupRoutes(r *gin.Engine) {
 			comments.POST("", handlers.AddComment)
 		}
 
+		reports := api.Group("/reports")
+		{
+			reports.POST("", middleware.AuthMiddleware(), handlers.CreateReport)
+		}
+
 		users := api.Group("/users", middleware.AuthMiddleware())
 		{
 			users.GET("/:id", handlers.GetProfile)
@@ -57,6 +62,7 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			admin.GET("/users", handlers.GetAllUsers)
 			admin.DELETE("/users/:id", handlers.DeleteUser)
+			admin.GET("/reports", handlers.GetReports)
 		}
 	}
 }
