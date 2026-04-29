@@ -41,7 +41,6 @@ func SetupRoutes(r *gin.Engine) {
 			bookmarks.DELETE("/:postId", handlers.DeleteBookmark)
 		}
 
-		// Tambahin ini di bawah blok bookmarks
 		comments := api.Group("/comments", middleware.AuthMiddleware())
 		{
 			comments.POST("", handlers.AddComment)
@@ -54,6 +53,9 @@ func SetupRoutes(r *gin.Engine) {
 
 		users := api.Group("/users", middleware.AuthMiddleware())
 		{
+			// 🔥 RUTE GANTI PASSWORD DIMASUKIN KE SINI (DI ATAS /:id) 🔥
+			users.PUT("/change-password", handlers.ChangePassword)
+
 			users.GET("/:id", handlers.GetProfile)
 			users.PUT("/:id", handlers.UpdateProfile)
 		}

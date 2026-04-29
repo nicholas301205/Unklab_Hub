@@ -76,3 +76,8 @@ export const getReports = async () => {
   const response = await api.get('/admin/reports');
   return response.data;
 };
+
+// Fungsi untuk ganti password
+export const changePassword = (passwordData) => {
+  return api.put('/users/change-password', passwordData);
+};

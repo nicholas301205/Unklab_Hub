@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Lock, Eye, EyeOff, ArrowLeft, Shield, CheckCircle } from 'lucide-react';
+// 🔥 IMPORT FUNGSI API YANG BARUSAN KITA BIKIN 🔥
+import { changePassword } from '../api/api'; 
 
 export function SettingsPage({ onBack }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -10,29 +12,22 @@ export function SettingsPage({ onBack }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const validatePassword = (password) => {
-    if (password.length < 8) {
-      return 'Password minimal 8 karakter';
-    }
-    if (!/(?=.*[a-z])/.test(password)) {
-      return 'Password harus mengandung huruf kecil';
-    }
-    if (!/(?=.*[A-Z])/.test(password)) {
-      return 'Password harus mengandung huruf besar';
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      return 'Password harus mengandung angka';
-    }
+    if (password.length < 8) return 'Password minimal 8 karakter';
+    if (!/(?=.*[a-z])/.test(password)) return 'Password harus mengandung huruf kecil';
+    if (!/(?=.*[A-Z])/.test(password)) return 'Password harus mengandung huruf besar';
+    if (!/(?=.*\d)/.test(password)) return 'Password harus mengandung angka';
     return '';
   };
 
-  const handleSubmit = (e) => {
+  // 🔥 FUNGSI INI UDAH GW UBAH JADI ASYNC BUAT NEMBAK BACKEND 🔥
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
 
-    // Validasi
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError('Semua field harus diisi');
       return;
@@ -54,18 +49,29 @@ export function SettingsPage({ onBack }) {
       return;
     }
 
-    // Panggilan API biasanya diletakkan di sini
-    console.log('Mengubah password...');
+    setIsLoading(true);
+    try {
+      // 🚀 NEMBAK KE GOLANG DI SINI 🚀
+      await changePassword({
+        current_password: currentPassword,
+        new_password: newPassword
+      });
 
-    // Simulasi sukses
-    setSuccess(true);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+      setSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
 
-    setTimeout(() => {
-      setSuccess(false);
-    }, 3000);
+      setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
+    } catch (err) {
+      console.error(err);
+      // Nampilin error asli dari Golang (misal: "Password saat ini salah!")
+      setError(err.response?.data?.error || 'Gagal mengubah password. Pastikan password lama benar.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -90,9 +96,7 @@ export function SettingsPage({ onBack }) {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Change Password Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          {/* Section Header */}
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 bg-indigo-100 rounded-lg">
               <Shield className="h-6 w-6 text-indigo-600" />
@@ -103,7 +107,6 @@ export function SettingsPage({ onBack }) {
             </div>
           </div>
 
-          {/* Success Message */}
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
               <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
@@ -111,14 +114,12 @@ export function SettingsPage({ onBack }) {
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Current Password */}
             <div>
@@ -142,11 +143,7 @@ export function SettingsPage({ onBack }) {
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
-                  {showCurrentPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
+                  {showCurrentPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                 </button>
               </div>
             </div>
@@ -173,11 +170,7 @@ export function SettingsPage({ onBack }) {
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
-                  {showNewPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
+                  {showNewPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                 </button>
               </div>
             </div>
@@ -204,11 +197,7 @@ export function SettingsPage({ onBack }) {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                 </button>
               </div>
             </div>
@@ -236,7 +225,6 @@ export function SettingsPage({ onBack }) {
               </ul>
             </div>
 
-            {/* Submit Button */}
             <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
               <button
                 type="button"
@@ -247,24 +235,14 @@ export function SettingsPage({ onBack }) {
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2"
+                disabled={isLoading}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50"
               >
                 <Lock className="h-5 w-5" />
-                Ubah Password
+                {isLoading ? 'Menyimpan...' : 'Ubah Password'}
               </button>
             </div>
           </form>
-        </div>
-
-        {/* Security Tips */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-sm font-semibold text-blue-900 mb-3">💡 Tips Keamanan</h3>
-          <ul className="space-y-2 text-sm text-blue-800">
-            <li>• Gunakan password yang unik dan tidak digunakan di tempat lain</li>
-            <li>• Jangan bagikan password Anda kepada siapa pun</li>
-            <li>• Ubah password secara berkala untuk keamanan tambahan</li>
-            <li>• Hindari menggunakan informasi pribadi yang mudah ditebak</li>
-          </ul>
         </div>
       </div>
     </div>
