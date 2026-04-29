@@ -8,7 +8,7 @@ import { CreatePostModal } from './components/CreatePostModal';
 import { AdminDashboard } from './components/AdminDashboard'; 
 import Login from './pages/Login';
 import Register from './pages/Register';
-import { api, getBookmarks, addBookmark, removeBookmark, addComment, deletePost } from './api/api';
+import { api, getBookmarks, addBookmark, removeBookmark, addComment, deletePost, reportPost } from './api/api';
 
 export default function App() {
   // --- 1. STATE INITIALIZATION ---
@@ -164,6 +164,15 @@ export default function App() {
     }
   };
 
+  const handleReport = async (postId, reason) => {
+    try {
+      await reportPost(postId, reason);
+    } catch (err) {
+      console.error('Report failed', err);
+      throw err;
+    }
+  };
+
   // --- 5. RENDER LOGIC (FILTERING) ---
   
   let displayedPosts = posts;
@@ -237,6 +246,7 @@ export default function App() {
               onBookmark={handleBookmark} 
               onAddComment={handleAddComment}
               onDeletePost={handleDeletePost}
+              onReport={handleReport}
             />
           ) : currentView === 'pengaturan' ? (
             <SettingsPage onBack={() => setCurrentView('beranda')} />
@@ -262,6 +272,7 @@ export default function App() {
                     onBookmark={handleBookmark}
                     onAddComment={handleAddComment}
                     onDeletePost={handleDeletePost}
+                    onReport={handleReport}
                   />
                 ))
               ) : (

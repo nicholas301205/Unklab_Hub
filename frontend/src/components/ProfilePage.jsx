@@ -3,7 +3,7 @@ import { Camera, Save, X, User, FileText, Mail, Calendar, Edit2 } from 'lucide-r
 import { PostCard } from './PostCard';
 import { updateProfile } from '../api/api'; 
 
-export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComment, onDeletePost, onUpdateSuccess }) {
+export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComment, onDeletePost, onUpdateSuccess, onReport }) {
   const [isEditing, setIsEditing] = useState(false);
   
   const [username, setUsername] = useState(currentUser?.username || '');
@@ -257,6 +257,7 @@ export function ProfilePage({ currentUser, posts, onClose, onBookmark, onAddComm
                   onBookmark={onBookmark}
                   onAddComment={onAddComment}
                   onDeletePost={onDeletePost}
+                  onReport={onReport}
                   onPostClick={() => {}}
                 />
               ))

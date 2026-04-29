@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { MessageSquare, Bookmark, Trash2, User, Send } from 'lucide-react';
+import { MessageSquare, Bookmark, Trash2, User, Send, AlertTriangle } from 'lucide-react';
 
-export function PostCard({ post, currentUser, onBookmark, onAddComment, onDeletePost }) {
+export function PostCard({ post, currentUser, onBookmark, onAddComment, onDeletePost, onReport  }) {
   // State untuk buka-tutup kolom komentar & nampung teksnya
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -106,6 +106,23 @@ export function PostCard({ post, currentUser, onBookmark, onAddComment, onDelete
           {/* Ikon bakal "terisi" dan tulisan berubah kalau statusnya isBookmarked = true */}
           <Bookmark className={`w-4 h-4 ${post.isBookmarked ? 'fill-indigo-600' : ''}`} />
           <span>{post.isBookmarked ? 'Tersimpan' : 'Simpan'}</span>
+        </button>
+        <button
+          onClick={async () => {
+            const reason = window.prompt('Sebagai apa alasan Anda melaporkan postingan ini? (opsional)');
+            if (reason === null) return; // cancel
+            try {
+              if (onReport) await onReport(post.id, reason || '');
+              alert('Terima kasih. Laporan dikirim.');
+            } catch (err) {
+              console.error(err);
+              alert('Gagal mengirim laporan');
+            }
+          }}
+          className="flex items-center gap-2 transition-colors text-sm font-medium hover:text-red-500"
+        >
+          <AlertTriangle className="w-4 h-4" />
+          <span>Laporkan</span>
         </button>
       </div>
 

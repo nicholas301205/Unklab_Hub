@@ -66,3 +66,13 @@ export const addComment = async (postId, text) => {
   });
   return response.data;
 };
+
+export const reportPost = async (postId, reason) => {
+  const response = await api.post('/reports', { post_id: parseInt(postId, 10), reason });
+  return response.data;
+};
+
+export const getReports = async () => {
+  const response = await api.get('/admin/reports');
+  return response.data;
+};

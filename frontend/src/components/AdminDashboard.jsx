@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
 import { LayoutDashboard, FileText, AlertTriangle, Users, Trash2, ArrowLeft, X, Search } from 'lucide-react'; 
 import { api } from '../api/api'; 
+import { getReports, deletePost } from '../api/api';
 
 export function AdminDashboard({ onExit }) {
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  const [reports, setReports] = useState([]);
   
   const [stats, setStats] = useState({ users: 0, posts: 0, reports: 0 });
   const [userList, setUserList] = useState([]);
   const [postList, setPostList] = useState([]);
+
+  const [posts, setPosts] = useState([]);
 
   const [postSearchTerm, setPostSearchTerm] = useState('');
   const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -60,7 +65,7 @@ export function AdminDashboard({ onExit }) {
         setStats({
           users: usersData.length,
           posts: postsData.length,
-          reports: 0
+          reports: reports.length
         });
 
       } catch (error) {
@@ -70,6 +75,19 @@ export function AdminDashboard({ onExit }) {
 
     fetchAdminStats();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'reports') return;
+    const fetchReports = async () => {
+      try {
+        const res = await getReports();
+        setReports(res.data || []);
+      } catch (err) {
+        console.error('Gagal ambil laporan:', err);
+      }
+    };
+    fetchReports();
+  }, [activeTab]);
 
   const handleDeletePost = async (id) => {
     if (window.confirm("Yakin menghapus diskusi ini? Konten & gambar akan hilang secara permanen.")) {
@@ -187,7 +205,7 @@ export function AdminDashboard({ onExit }) {
                 <div className="p-4 bg-red-50 text-red-600 rounded-xl"><AlertTriangle className="h-6 w-6" /></div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Laporan Menunggu</p>
-                  <p className="text-2xl font-bold text-gray-900">0</p>
+                  <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
                 </div>
               </div>
 
@@ -355,11 +373,43 @@ export function AdminDashboard({ onExit }) {
 
         {/* TAB REPORTS */}
         {activeTab === 'reports' && (
-          <div className="animate-in fade-in duration-300">
+          <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-6">Laporan Konten</h1>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center text-gray-500 py-12">
-              <AlertTriangle className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <p>Fitur report belum dibuat di backend.</p>
+            <div className="space-y-4">
+              {reports.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-gray-500">
+                  Belum ada laporan.
+                </div>
+              ) : (
+                reports.map(r => (
+                  <div key={r.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-sm text-gray-500">Dilaporkan oleh <span className="font-medium text-gray-900">{r.reporter?.username || r.reporter?.email || 'User'}</span></div>
+                        <div className="text-lg font-bold text-gray-900">{r.post?.title || `Post #${r.post_id}`}</div>
+                        {r.reason && <div className="text-sm text-gray-700 mt-2">Alasan: {r.reason}</div>}
+                        <div className="text-xs text-gray-400 mt-2">{new Date(r.created_at).toLocaleString('id-ID')}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Hapus postingan ini beserta laporannya?')) return;
+                            try {
+                              await deletePost(r.post_id);
+                              setReports(reports.filter(x => x.id !== r.id));
+                              setPosts(posts.filter(p => p.id !== r.post_id));
+                            } catch (err) {
+                              console.error(err);
+                              alert('Gagal menghapus postingan');
+                            }
+                          }}
+                          className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        >Hapus Post</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
